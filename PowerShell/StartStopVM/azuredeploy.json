@@ -1,0 +1,109 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "functionAppName": {
+            "type": "string"
+        }
+    },
+    "variables": {
+        "hostingPlanName": "[parameters('functionAppName')]",
+        "location": "[resourceGroup().location]",
+        "storageAccountName": "[concat('storage', uniquestring(resourceGroup().id))]",
+        "workerSize": "0",
+        "sku": "Basic",
+        "skuCode": "B1"
+    },
+    "resources": [
+        {
+            "name": "[parameters('functionAppName')]",
+            "type": "Microsoft.Web/sites",            
+            "dependsOn": [
+                "[concat('Microsoft.Web/serverfarms/', variables('hostingPlanName'))]",
+                "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]",
+                "[resourceId('microsoft.insights/components/', parameters('functionAppName'))]"
+            ],
+            "identity": {
+                "type": "SystemAssigned"
+            },
+            "properties": {
+                "siteConfig": {
+                    "appSettings": [
+                        {
+                            "name": "FUNCTIONS_WORKER_RUNTIME",
+                            "value": "powershell"
+                        },
+                        {
+                            "name": "AzureWebJobsStorage",
+                            "value": "[concat('DefaultEndpointsProtocol=https;AccountName=',variables('storageAccountName'),';AccountKey=',listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2015-05-01-preview').key1)]"
+                        },
+                        {
+                            "name": "FUNCTIONS_EXTENSION_VERSION",
+                            "value": "~2"
+                        },
+                        {
+                            "name": "WEBSITE_NODE_DEFAULT_VERSION",
+                            "value": "8.11.1"
+                        },
+                        {
+                            "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
+                            "value": "[reference(resourceId('microsoft.insights/components/', parameters('functionAppName')), '2015-05-01').InstrumentationKey]"
+                        }
+                    ],
+                    "alwaysOn": true,
+                    "linuxFxVersion": "DOCKER|mcr.microsoft.com/azure-functions/powershell:2.0"
+                },
+                "name": "[parameters('functionAppName')]",
+                "clientAffinityEnabled": false,
+                "serverFarmId": "[concat('/subscriptions/', subscription().subscriptionId,'/resourcegroups/', resourceGroup().name, '/providers/Microsoft.Web/serverfarms/', variables('hostingPlanName'))]"
+            },
+            "apiVersion": "2018-02-01",
+            "location": "[variables('location')]",
+            "kind": "functionapp"
+        },
+        {
+            "apiVersion": "2016-09-01",
+            "name": "[variables('hostingPlanName')]",
+            "type": "Microsoft.Web/serverfarms",
+            "location": "[variables('location')]",
+            "properties": {
+                "name": "[variables('hostingPlanName')]",
+                "workerSizeId": "[variables('workerSize')]",
+                "reserved": true,
+                "numberOfWorkers": "1"
+            },
+            "sku": {
+                "Tier": "[variables('sku')]",
+                "Name": "[variables('skuCode')]"
+            },
+            "kind": "linux"
+        },
+        {
+            "apiVersion": "2015-05-01-preview",
+            "type": "Microsoft.Storage/storageAccounts",
+            "name": "[variables('storageAccountName')]",
+            "location": "[variables('location')]",
+            "properties": {
+                "accountType": "Standard_LRS"
+            }
+        },
+        {
+            "apiVersion": "2015-05-01",
+            "name": "[parameters('functionAppName')]",
+            "type": "Microsoft.Insights/components",
+            "location": "[variables('location')]",
+            "tags": {
+                "[concat('hidden-link:', resourceGroup().id, '/providers/Microsoft.Web/sites/', parameters('functionAppName'))]": "Resource"
+            },
+            "properties": {
+                "ApplicationId": "[parameters('functionAppName')]"
+            }
+        }
+    ],
+    "outputs": {
+        "principalId": {
+          "type": "string",
+          "value": "[reference(concat(resourceId('Microsoft.Web/sites/', parameters('functionAppName')), '/providers/Microsoft.ManagedIdentity/Identities/default'), '2015-08-31-PREVIEW').principalId]"
+        }
+    }
+}
