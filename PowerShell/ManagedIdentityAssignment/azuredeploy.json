@@ -1,0 +1,135 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "functionAppName": {
+            "type": "string",
+            "metadata": {
+                "description": "The name of the function application to be created"
+            }
+        },
+        "resourceGroupName": {
+            "type": "string",
+            "metadata": {
+                "description": "The name of the resource group to be created to host the function application"
+            }
+        },
+        "resourceGroupLocation": {
+            "type": "string",
+            "metadata": {
+                "description": "The location of the resource group."
+            }
+        },
+        "scope": {
+            "type": "string",
+            "defaultValue": "ResourceGroup",
+            "allowedValues": [
+              "None",
+              "ResourceGroup",
+              "Subscription"
+            ],
+            "metadata": {
+              "description": "Assign the managed identity contributor access to the resource group or subscription. Requires admin access"
+            }      
+        }
+    },
+    "variables": {
+        "subscriptionScopeTemplate": "https://raw.githubusercontent.com/eamonoreilly/AzureFunctions/master/PowerShell/ManagedIdentityAssignment/assignMSISubscriptionScope.json",
+        "resourceGroupScopeTemplate": "https://raw.githubusercontent.com/eamonoreilly/AzureFunctions/master/PowerShell/ManagedIdentityAssignment/assignMSIResourceGroupScope.json",
+        "functionAppTemplate": "https://raw.githubusercontent.com/eamonoreilly/AzureFunctions/master/PowerShell/StartStopVM/azuredeploy.json",
+        "contributorId": "b24988ac-6180-42a0-ab88-20f7382dd24c"
+    },
+    "resources": [
+        {
+            "name": "[parameters('resourceGroupName')]",
+            "type": "Microsoft.Resources/resourceGroups",
+            "apiVersion": "2018-05-01",
+            "location": "[parameters('resourceGroupLocation')]",
+            "properties": {}
+        },
+        {
+            "type": "Microsoft.Resources/deployments",
+            "resourceGroup": "[parameters('resourceGroupName')]",
+            "apiVersion": "2018-05-01",
+            "name": "functionApp",
+            "dependsOn": [
+                "[resourceId('Microsoft.Resources/resourceGroups/', parameters('resourceGroupName'))]"
+          ],
+            "properties": {
+              "mode": "Incremental",
+              "templateLink": {
+                "uri": "[variables('functionAppTemplate')]",
+                "contentVersion": "1.0.0.0"
+              },
+              "parameters": {
+                "functionAppName": {
+                    "value": "[parameters('functionAppName')]"
+                }
+              }
+          }          
+        },
+        {
+            "condition": "[equals(parameters('scope'),'ResourceGroup')]",
+            "type": "Microsoft.Resources/deployments",
+            "resourceGroup": "[parameters('resourceGroupName')]",
+            "apiVersion": "2018-05-01",
+            "name": "AssignResourceGroupMSI",
+            "dependsOn": [
+                "[concat('Microsoft.Resources/deployments/', 'functionApp')]"
+          ],
+            "properties": {
+              "mode": "Incremental",
+              "templateLink": {
+                "uri": "[variables('resourceGroupScopeTemplate')]",
+                "contentVersion": "1.0.0.0"
+              },
+              "parameters": {
+                "principalId": {
+                  "value": "[reference('functionApp').outputs.principalId.value]"
+                },
+                "roleDefinitionId": {
+                  "value": "[variables('contributorId')]"
+                },
+                "resourceName": {
+                    "value": "[guid(parameters('functionAppName'))]"
+                }
+              }
+          } 
+        },
+        {
+            "condition": "[equals(parameters('scope'),'Subscription')]",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2018-05-01",
+            "location": "[parameters('resourceGroupLocation')]",
+            "name": "AssignMSI",
+            "dependsOn": [
+                "[concat('Microsoft.Resources/deployments/', 'functionApp')]"
+          ],
+            "properties": {
+              "mode": "Incremental",
+              "templateLink": {
+                "uri": "[variables('subscriptionScopeTemplate')]",
+                "contentVersion": "1.0.0.0"
+              },
+              "parameters": {
+                "principalId": {
+                  "value": "[reference('functionApp').outputs.principalId.value]"
+                },
+                "roleDefinitionId": {
+                  "value": "[variables('contributorId')]"
+                },
+                "resourceName": {
+                    "value": "[guid(concat(parameters('resourceGroupName'),  parameters('functionAppName')))]"
+                }
+              }
+          }          
+        }
+    ],
+    "outputs": {
+        "Location": {
+            "type": "string",
+            "value": "[subscription().subscriptionId]"
+          }
+    }
+}
+
