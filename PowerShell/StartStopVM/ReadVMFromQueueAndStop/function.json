@@ -1,0 +1,12 @@
+{
+  "disabled": false,
+  "bindings": [
+    {
+      "name": "QueueItem",
+      "type": "queueTrigger",
+      "direction": "in",
+      "queueName": "stopvm-queue-items",
+      "connection": "AzureWebJobsStorage"
+    }
+  ]
+}
