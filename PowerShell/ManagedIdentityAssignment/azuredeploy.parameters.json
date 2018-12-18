@@ -11,6 +11,9 @@
         "resourceGroupLocation": {
             "value": "West US 2"
         },
+        "functionAppTemplateURL": {
+            "value": "https://raw.githubusercontent.com/eamonoreilly/AzureFunctions/master/PowerShell/StartStopVM/azuredeploy.json"
+        },
         "scope": {
             "value": "None"
         }
