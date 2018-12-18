@@ -90,11 +90,16 @@ try {
 
     if ($null -ne $Env:MSI_ENDPOINT)
     {
-        Write-Information ("Authenticating with MSI as we are running within Azure with managed identify enabled")
-        $tokenAuthURI = $env:MSI_ENDPOINT + "?resource=https://management.azure.com/&api-version=2017-09-01"
-        $tokenResponse = Invoke-RestMethod -Method Get -Headers @{"Secret"="$env:MSI_SECRET"} -Uri $tokenAuthURI
-        Login-AzAccount -SubscriptionId 124fa371-849d-46e4-a6ec-0bc48954ea49 -AccessToken $tokenResponse.access_token `
-                        -AccountId testfunctionpowershell1
+        Write-Information ("Authenticating with MSI as we are running within Azure with managed identity enabled")
+        $TokenAuthURI = $env:MSI_ENDPOINT + "?resource=https://management.azure.com/&api-version=2017-09-01"
+        $TokenResponse = Invoke-RestMethod -Method Get -Headers @{"Secret"="$env:MSI_SECRET"} -Uri $tokenAuthURI
+
+        # Get subscription id from the website owner name environment variables and authenticate to Azure
+        $Website_owner_name = $env:WEBSITE_OWNER_NAME
+        $SubscriptionId = $Website_owner_name.Substring(0,$Website_owner_name.IndexOf('+'))
+        $AppName = $env:APPSETTING_WEBSITE_SITE_NAME
+        Login-AzAccount -SubscriptionId $SubscriptionId -AccessToken $TokenResponse.access_token `
+                            -AccountId $AppName | Write-Information       
     }
 
     if ($Request.Method -eq "POST")
