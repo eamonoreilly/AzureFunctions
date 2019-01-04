@@ -20,6 +20,12 @@
                 "description": "The location of the resource group."
             }
         },
+        "functionAppTemplateURL": {
+            "type": "string",
+            "metadata": {
+                "description": "The url of the function app template to deploy"
+            }
+        },
         "scope": {
             "type": "string",
             "defaultValue": "ResourceGroup",
@@ -36,7 +42,6 @@
     "variables": {
         "subscriptionScopeTemplate": "https://raw.githubusercontent.com/eamonoreilly/AzureFunctions/master/PowerShell/ManagedIdentityAssignment/assignMSISubscriptionScope.json",
         "resourceGroupScopeTemplate": "https://raw.githubusercontent.com/eamonoreilly/AzureFunctions/master/PowerShell/ManagedIdentityAssignment/assignMSIResourceGroupScope.json",
-        "functionAppTemplate": "https://raw.githubusercontent.com/eamonoreilly/AzureFunctions/master/PowerShell/StartStopVM/azuredeploy.json",
         "contributorId": "b24988ac-6180-42a0-ab88-20f7382dd24c"
     },
     "resources": [
@@ -58,7 +63,7 @@
             "properties": {
               "mode": "Incremental",
               "templateLink": {
-                "uri": "[variables('functionAppTemplate')]",
+                "uri": "[parameters('functionAppTemplateURL')]",
                 "contentVersion": "1.0.0.0"
               },
               "parameters": {
