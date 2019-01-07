@@ -133,7 +133,7 @@
             "name": "[guid(parameters('functionAppName'))]",
             "apiVersion": "2017-09-01",
             "dependsOn": [
-                "[concat('Microsoft.Web/sites/', parameters('functionAppName'))]"
+                "[concat('Microsoft.Web/sites/', parameters('functionAppName'), '/functions/', variables('functionName'))]"
             ],
             "properties": {
                 "roleDefinitionId": "[resourceId('Microsoft.Authorization/roleDefinitions', variables('contributorId'))]",
