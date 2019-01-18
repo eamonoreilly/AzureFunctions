@@ -44,16 +44,10 @@
                             "value": "~2"
                         },
                         {
-                            "name": "WEBSITE_NODE_DEFAULT_VERSION",
-                            "value": "8.11.1"
-                        },
-                        {
                             "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
                             "value": "[reference(resourceId('microsoft.insights/components/', parameters('functionAppName')), '2015-05-01').InstrumentationKey]"
                         }
-                    ],
-                    "alwaysOn": true,
-                    "linuxFxVersion": "DOCKER|mcr.microsoft.com/azure-functions/powershell:2.0"
+                    ]
                 },
                 "name": "[parameters('functionAppName')]",
                 "clientAffinityEnabled": false,
@@ -64,21 +58,15 @@
             "kind": "functionapp"
         },
         {
-            "apiVersion": "2016-09-01",
-            "name": "[variables('hostingPlanName')]",
             "type": "Microsoft.Web/serverfarms",
-            "location": "[variables('location')]",
+            "apiVersion": "2015-04-01",
+            "name": "[variables('hostingPlanName')]",
+            "location": "[resourceGroup().location]",
             "properties": {
                 "name": "[variables('hostingPlanName')]",
-                "workerSizeId": "[variables('workerSize')]",
-                "reserved": true,
-                "numberOfWorkers": "1"
-            },
-            "sku": {
-                "Tier": "[variables('sku')]",
-                "Name": "[variables('skuCode')]"
-            },
-            "kind": "linux"
+                "computeMode": "Dynamic",
+                "sku": "Dynamic"
+            }
         },
         {
             "apiVersion": "2015-05-01-preview",
@@ -124,7 +112,7 @@
                 ]
               },
               "files": {
-                  "run.ps1": "param($Request, $TriggerMetadata)\r\n\r\n$ErrorActionPreference = 'stop'\r\n# Write to the Azure Functions log stream.\r\nWrite-Information (\"Starting function...\") \r\n\r\nif ($null -ne $Env:MSI_ENDPOINT)\r\n{\r\n    Write-Information (\"Authenticating with MSI as we are running within Azure with managed identity enabled\")\r\n    $TokenAuthURI = $env:MSI_ENDPOINT + \"?resource=https:\/\/management.azure.com\/&api-version=2017-09-01\"\r\n    $TokenResponse = Invoke-RestMethod -Method Get -Headers @{\"Secret\"=\"$env:MSI_SECRET\"} -Uri $TokenAuthURI\r\n    \r\n    # Get subscription id from the website owner name environment variables and authenticate to Azure\r\n    $Website_owner_name = $env:WEBSITE_OWNER_NAME\r\n    $SubscriptionId = $Website_owner_name.Substring(0,$Website_owner_name.IndexOf('+'))\r\n    $AppName = $env:APPSETTING_WEBSITE_SITE_NAME\r\n    Login-AzAccount -SubscriptionId $SubscriptionId -AccessToken $TokenResponse.access_token `\r\n                    -AccountId $AppName | Write-Information\r\n}\r\n\r\nif ($Request.Method -eq \"POST\")\r\n{\r\n    Write-Information (\"Post method used\")\r\n    Write-Information (ConvertTo-Json $Request.Body)    \r\n}\r\nelse\r\n{\r\n    Write-Information (\"Get method used\")\r\n    Write-Information (ConvertTo-Json $Request.Query)\r\n}\r\n\r\n# Write out all of the resources\r\nGet-AzResource"
+                  "run.ps1": "param($Request, $TriggerMetadata)\r\n\r\n$ErrorActionPreference = 'stop'\r\n$env:PSModulePath = $env:PSModulePath + \";D:\\Program Files (x86)\\ManagedDependencies\\PowerShell\\AzPSModules\\1.0.0\"\r\n# Write to the Azure Functions log stream.\r\nWrite-Information (\"Starting function...\") \r\n\r\nif ($null -ne $Env:MSI_ENDPOINT)\r\n{\r\n    Write-Information (\"Authenticating with MSI as we are running within Azure with managed identity enabled\")\r\n    $TokenAuthURI = $env:MSI_ENDPOINT + \"?resource=https:\/\/management.azure.com\/&api-version=2017-09-01\"\r\n    $TokenResponse = Invoke-RestMethod -Method Get -Headers @{\"Secret\"=\"$env:MSI_SECRET\"} -Uri $TokenAuthURI\r\n    \r\n    # Get subscription id from the website owner name environment variables and authenticate to Azure\r\n    $Website_owner_name = $env:WEBSITE_OWNER_NAME\r\n    $SubscriptionId = $Website_owner_name.Substring(0,$Website_owner_name.IndexOf('+'))\r\n    $AppName = $env:APPSETTING_WEBSITE_SITE_NAME\r\n    Login-AzAccount -SubscriptionId $SubscriptionId -AccessToken $TokenResponse.access_token `\r\n                    -AccountId $AppName | Write-Information\r\n}\r\n\r\nif ($Request.Method -eq \"POST\")\r\n{\r\n    Write-Information (\"Post method used\")\r\n    if ($null -ne $Request.Body) \r\n    {\r\n        Write-Information (ConvertTo-Json $Request.Body)  \r\n    }  \r\n}\r\nelse\r\n{\r\n    Write-Information (\"Get method used\")\r\n    if ($null -ne $Request.Query) \r\n    {\r\n        Write-Information (ConvertTo-Json $Request.Query)\r\n    }\r\n}\r\n\r\n# Write out all of the resources\r\nGet-AzResource"
               }
             }
         },
