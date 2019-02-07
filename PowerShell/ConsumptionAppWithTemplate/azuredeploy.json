@@ -3,7 +3,10 @@
     "contentVersion": "1.0.0.0",
     "parameters": {
         "functionAppName": {
-            "type": "string"
+            "type": "string",
+            "metadata": {
+                "description": "Specify the name of the function application"
+              }
         },
         "ApplicationInsightsLocation": {
             "type": "string",
@@ -31,13 +34,17 @@
                 "dotnet",
                 "node",
                 "java"
-            ]
+            ],
+            "metadata": {
+                "description": "Pick the language runtime that you want enabled"
+              }
         }
     },
     "variables": {
         "hostingPlanName": "[parameters('functionAppName')]",
         "location": "[resourceGroup().location]",
         "storageAccountName": "[concat('storage', uniquestring(resourceGroup().id))]",
+        "resourceGroupScopeTemplate": "https://raw.githubusercontent.com/eamonoreilly/AzureFunctions/master/PowerShell/ManagedIdentityAssignment/assignMSIResourceGroupScope.json",
         "contributorId": "b24988ac-6180-42a0-ab88-20f7382dd24c"
     },
     "resources": [
@@ -112,6 +119,32 @@
             "properties": {
                 "ApplicationId": "[parameters('functionAppName')]"
             }
+        },
+        {
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2018-05-01",
+            "name": "AssignResourceGroupMSI",
+            "dependsOn": [
+                "[concat('Microsoft.Web/sites/', parameters('functionAppName'))]"
+          ],
+            "properties": {
+              "mode": "Incremental",
+              "templateLink": {
+                "uri": "[variables('resourceGroupScopeTemplate')]",
+                "contentVersion": "1.0.0.0"
+              },
+              "parameters": {
+                "principalId": {
+                  "value": "[reference(concat(resourceId('Microsoft.Web/sites/', parameters('functionAppName')), '/providers/Microsoft.ManagedIdentity/Identities/default'), '2015-08-31-PREVIEW').principalId]"
+                },
+                "roleDefinitionId": {
+                  "value": "[variables('contributorId')]"
+                },
+                "resourceName": {
+                    "value": "[guid(parameters('functionAppName'))]"
+                }
+              }
+          } 
         }
     ],
     "outputs": {
