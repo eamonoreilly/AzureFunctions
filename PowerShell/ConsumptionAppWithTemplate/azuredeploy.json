@@ -119,32 +119,6 @@
             "properties": {
                 "ApplicationId": "[parameters('functionAppName')]"
             }
-        },
-        {
-            "type": "Microsoft.Resources/deployments",
-            "apiVersion": "2018-05-01",
-            "name": "AssignResourceGroupMSI",
-            "dependsOn": [
-                "[concat('Microsoft.Web/sites/', parameters('functionAppName'))]"
-          ],
-            "properties": {
-              "mode": "Incremental",
-              "templateLink": {
-                "uri": "[variables('resourceGroupScopeTemplate')]",
-                "contentVersion": "1.0.0.0"
-              },
-              "parameters": {
-                "principalId": {
-                  "value": "[reference(concat(resourceId('Microsoft.Web/sites/', parameters('functionAppName')), '/providers/Microsoft.ManagedIdentity/Identities/default'), '2015-08-31-PREVIEW').principalId]"
-                },
-                "roleDefinitionId": {
-                  "value": "[variables('contributorId')]"
-                },
-                "resourceName": {
-                    "value": "[guid(parameters('functionAppName'))]"
-                }
-              }
-          } 
         }
     ],
     "outputs": {
