@@ -112,18 +112,6 @@
             "properties": {
                 "ApplicationId": "[parameters('functionAppName')]"
             }
-        },
-        {
-            "type": "Microsoft.Authorization/roleAssignments",
-            "name": "[guid(parameters('functionAppName'))]",
-            "apiVersion": "2017-09-01",
-            "dependsOn": [
-                "[concat('Microsoft.Web/sites/', parameters('functionAppName'))]"
-            ],
-            "properties": {
-                "roleDefinitionId": "[resourceId('Microsoft.Authorization/roleDefinitions', variables('contributorId'))]",
-                "principalId": "[reference(concat(resourceId('Microsoft.Web/sites/', parameters('functionAppName')), '/providers/Microsoft.ManagedIdentity/Identities/default'), '2015-08-31-PREVIEW').principalId]"
-            }
         }
     ],
     "outputs": {
