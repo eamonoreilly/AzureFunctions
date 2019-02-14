@@ -10,6 +10,9 @@
         },
         "runtimeStack": {
             "value": "powershell"
+        },
+        "timezone": {
+            "value": "UTC"
         }
     }
 }
