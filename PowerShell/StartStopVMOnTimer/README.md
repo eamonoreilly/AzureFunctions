@@ -1,0 +1,98 @@
+# Sample to start / stop VMs on a schedule
+
+Create an Azure function application and deploy functions that either starts or stops virtual machines in the specified resource group, subscription, or by tag on a schedule.
+
+## Prerequisites
+
+Before running this sample, you must have the following:
+
++ Install [Azure Core Tools version 2.x](functions-run-local.md#v2).
+
++ Install the [Azure CLI]( /cli/azure/install-azure-cli).
+
+## Clone repository or download files to local machine
+
++ Change to the PowerShell/StartStopVMOnTimer directory.
+
+## Create a new resource group and function application on Azure
+
+Run the following PowerShell command and specify the value for the function application name in the TemplateParameterObject hashtable.
+
+```powershell
+New-AzResourceGroup -Name <resource group name> -Location <location>
+New-AzResourceGroupDeployment -ResourceGroupName <resource group name> -TemplateUri "https://raw.githubusercontent.com/eamonoreilly/AzureFunctions/master/PowerShell/ConsumptionAppWithTemplate/azuredeploy.json" -TemplateParameterObject @{"functionAppName" = "<your function app name>"} -verbose
+```
+
+This should create a new resource group with a function application and a managed service identity enabled. The id of the service principal for the MSI should be returned as an output from the deployment.
+
+principalId    String   cac1fa06-2ad8-437d-99f6-b75edaae2921
+
+## Grant the managed service identity contributor access to the subscription or resource group so it can perform actions
+
+The below command sets the access at the subscription level.
+
+```powershell
+$Context = Get-AzContext
+New-AzRoleAssignment -ObjectId <principalId> -RoleDefinitionName Contributor -Scope "/subscriptions/$($Context.Subscription)
+```
+
+## Get the local.settings.json values from the function application created in Azure
+
+```powershell
+func azure functionapp fetch-app-settings <function app name>
+```
+
+This should create a local.settings.json file in the StartStopVMOnTimer directory beside the host.json with the settings from the Azure function app.
+
+## Test the functions locally
+
+Install the Az.Compute module into the modules folder as it will be used to start / stop the virtual machines.
+
+```powershell
+Save-Module -Name Az.Compute -Path .\modules -Verbose
+```
+
+This should install the Az.Accounts and Az.Compute modules into the modules folder
+
+Start the function with the following command
+
+```powershell
+func start
+```
+
+You can then call a trigger function by performing a post against the function on the admin api. Open up another Powershell console session and run:
+
+```powershell
+Invoke-RestMethod "http://localhost:7071/admin/functions/StartVMOnTimer" -Method post -Body '{}' -ContentType "application/json"
+```
+
+Modify the values for each of the below variables in run.ps1 as needed.
+
+```powershell
+# Specify the VMs that you want to stop. Modify or comment out below based on which VMs to check.
+$VMResourceGroupName = "Contoso"
+#$VMName = "ContosoVM1"
+#$TagName = "AutomaticallyStart"
+```
+
+Modify the start and stop time in the function.json file. They are currently set to 8am and 8pm UTC.
+
+```json
+{
+  "disabled": false,
+  "bindings": [
+    {
+      "name": "Timer",
+      "type": "timerTrigger",
+      "direction": "in",
+      "schedule": "0 0 20 * * *"
+    }
+  ]
+}
+```
+
+## Publish the functions to the function application in Azure
+
+```powershell
+func azure functionapp publish <function app name>
+```
