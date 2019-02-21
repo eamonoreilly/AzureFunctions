@@ -17,7 +17,7 @@ Run the following PowerShell command and specify the value for the function appl
 ```powershell
 New-AzResourceGroup -Name <resource group name> -Location <location>
 
-New-AzResourceGroupDeployment -ResourceGroupName <resource group name> -TemplateUri "https://raw.githubusercontent.com/eamonoreilly/AzureFunctions/master/PowerShell/ConsumptionAppWithTemplate/azuredeploy.json" -TemplateParameterObject @{"functionAppName" = "<your function app name>"} -verbose
+New-AzResourceGroupDeployment -ResourceGroupName <resource group name> -TemplateParameterObject @{"functionAppName" = "<your function app name>"} -TemplateUri "https://raw.githubusercontent.com/eamonoreilly/AzureFunctions/master/PowerShell/ConsumptionAppWithTemplate/azuredeploy.json" -verbose
 ```
 
 This should create a new resource group with a function application and a managed service identity enabled. The id of the service principal for the MSI should be returned as an output from the deployment.
@@ -30,7 +30,7 @@ The below command sets the access at the subscription level.
 
 ```powershell
 $Context = Get-AzContext
-New-AzRoleAssignment -ObjectId <principalId> -RoleDefinitionName Contributor -Scope "/subscriptions/$($Context.Subscription)
+New-AzRoleAssignment -ObjectId <principalId> -RoleDefinitionName Contributor -Scope "/subscriptions/$($Context.Subscription)"
 ```
 
 ## Clone repository or download files to local machine
