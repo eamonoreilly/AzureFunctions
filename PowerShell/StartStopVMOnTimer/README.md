@@ -6,13 +6,9 @@ Create an Azure function application and deploy functions that either starts or 
 
 Before running this sample, you must have the following:
 
-+ Install [Azure Core Tools version 2.x](functions-run-local.md#v2).
++ Install [Azure Core Tools version 2.x](https://docs.microsoft.com/en-us/azure/azure-functions/functions-run-local)
 
-+ Install the [Azure CLI]( /cli/azure/install-azure-cli).
-
-## Clone repository or download files to local machine
-
-+ Change to the PowerShell/StartStopVMOnTimer directory.
++ Install the [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli)
 
 ## Create a new resource group and function application on Azure
 
@@ -20,12 +16,13 @@ Run the following PowerShell command and specify the value for the function appl
 
 ```powershell
 New-AzResourceGroup -Name <resource group name> -Location <location>
+
 New-AzResourceGroupDeployment -ResourceGroupName <resource group name> -TemplateUri "https://raw.githubusercontent.com/eamonoreilly/AzureFunctions/master/PowerShell/ConsumptionAppWithTemplate/azuredeploy.json" -TemplateParameterObject @{"functionAppName" = "<your function app name>"} -verbose
 ```
 
 This should create a new resource group with a function application and a managed service identity enabled. The id of the service principal for the MSI should be returned as an output from the deployment.
 
-principalId    String   cac1fa06-2ad8-437d-99f6-b75edaae2921
+Example: principalId    String   cac1fa06-2ad8-437d-99f6-b75edaae2921
 
 ## Grant the managed service identity contributor access to the subscription or resource group so it can perform actions
 
@@ -35,6 +32,12 @@ The below command sets the access at the subscription level.
 $Context = Get-AzContext
 New-AzRoleAssignment -ObjectId <principalId> -RoleDefinitionName Contributor -Scope "/subscriptions/$($Context.Subscription)
 ```
+
+## Clone repository or download files to local machine
+
++ Download the repository files or clone to local machine.
+
++ Change to the PowerShell/StartStopVMOnTimer directory.
 
 ## Get the local.settings.json values from the function application created in Azure
 
@@ -75,7 +78,7 @@ $VMResourceGroupName = "Contoso"
 #$TagName = "AutomaticallyStart"
 ```
 
-Modify the start and stop time in the function.json file. They are currently set to 8am and 8pm UTC.
+Modify the start and stop time in the function.json file. They are currently set to 8am and 8pm UTC. You can change the timezone by modifying the application setting WEBSITE_TIME_ZONE. You can also pass in a parameter 'timezone' to the above [ARM template](https://raw.githubusercontent.com/eamonoreilly/AzureFunctions/master/PowerShell/ConsumptionAppWithTemplate/azuredeploy.json) that was used to create the function application if you want a different timezone so that daylight savings time will be honored.
 
 ```json
 {
